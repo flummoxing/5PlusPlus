@@ -16,7 +16,7 @@ Follow these steps to get BookSwap running locally:
 
 To simulate a successful login, use the following information.
 
-Username: `admin@bookswap.com`
+Username: `admin`
 
 Password: `password`
 
