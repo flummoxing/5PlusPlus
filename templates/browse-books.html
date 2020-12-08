@@ -1,0 +1,404 @@
+{% extends "layout.html" %}
+{% set active_page = 'browse-books' %}
+{% block content %}
+
+
+    {% if show_recent %}
+        <div class="container mt-4 text-center mx-auto">
+            <h1>Browse Books</h1>
+            <div class="w-75 mx-auto container">
+                <p class="lead">Browse through our book selection or check if a book is currently
+                    available for trade using the search tool below.</p>
+            </div>
+            <p></p>
+            <br>
+            <h3 class="text-info">Our most recent additions</h3>
+            <div class="row p-2">
+                {% for book in recent_books %}
+                    <div class="col-3 mb-4">
+                        <div class="card text-center h-100">
+                            <div class="card-body">
+                                <img class="card-img-top img-fluid mx-auto img-thumbnail"
+                                     src="{{ book['coverImageUrl'] }}"
+                                     style="max-width:70%;max-height: fit-content">
+                                <h5 class="card-title mt-3">{{ book['title'] }}</h5>
+                                <p class="card-text text-left">
+                                    <span class="text-info">Author:</span> {{ book['author'] }}
+                                    <br><span class="text-info">ISBN:</span> {{ book['ISBN'] }}
+                                    <br><span class="text-info">Quality:</span> {{ book['copyQuality'] }}
+                                    <br><span class="text-info">Points Needed:</span> {{ book['pointsNeeded'] }}
+                                </p>
+                                <p class="card-text text-center">
+                                    <small>Listing User: {{ book['listingUser'] }}</small>
+                                </p>
+                                {% if session.user_num %}
+                                    <form>
+                                        <button type="submit" class="btn btn-primary btn-sm"
+                                                onclick='addToWishlist({{ book | tojson }})'>Add to Wishlist
+                                        </button>
+                                    </form>
+                                    <p></p>
+                                    <form>
+                                        <button type="submit" class="btn btn-success btn-sm"
+                                                onclick='requestTrade( {{ book | tojson }}, {{ points_available|int }})'>
+                                            Request Trade
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <a class="btn btn-primary btn-sm" href="{{ url_for('signup') }}">
+                                        Sign Up to get started
+                                    </a>
+                                    <p></p>
+                                    <a class="btn btn-success btn-sm" href="{{ url_for('login') }}">
+                                        Login to use your points
+                                    </a>
+                                {% endif %}
+                            </div>
+                            <div class="card-footer text-muted text-center">
+                                listed {{ book['timeHere'] }} days ago
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+
+    {% if show_search %}
+        <div class="container w-50 text-center mx-auto mt-5">
+            <div id="bookSearch" class="mt-4">
+                <h2 class="text-info">Search For A Book</h2>
+                <p>
+                    Let's find your next read. For this search, the more fields you complete,
+                    the more precise the search. Entering a book's ISBN is always the
+                    most efficient way to find an exact match.
+                </p>
+                <form method="POST" action="">
+                    {{ form.hidden_tag() }}
+                    <fieldset class="form-group">
+                        <div class="form-group">
+                            {{ form.ISBN.label(class="form-control-label") }} {% if
+                    form.ISBN.errors %} {{ form.ISBN(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.ISBN.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %} {{ form.ISBN(class="form-control") }} {% endif %}
+                        </div>
+                        <div class="form-group">
+                            {{ form.author.label(class="form-control-label") }} {% if
+                    form.author.errors %} {{ form.author(class="form-control
+                    is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.author.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %} {{ form.author(class="form-control") }} {% endif %}
+                        </div>
+                        <div class="form-group">
+                            {{ form.title.label(class="form-control-label") }} {% if
+                    form.title.errors %} {{ form.author(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.title.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %} {{ form.title(class="form-control") }} {% endif %}
+                        </div>
+                    </fieldset>
+                    <div class="form-group">
+                        {{ form.submit(id="bookSearchFormButton" , class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+            <br/>
+        </div>
+    {% endif %}
+
+    {% if show_results %}
+        <div id="bookSearchResults" class="container w-50 mt-4">
+            <h2 class="text-center">Book Search Results</h2>
+            <!-- Local results - listed by users on the site -->
+            <p class="text-center">This is what users on our site have listed for trade. Time to get your read on!</p>
+            <div class="list-group">
+                {% for book in local_results %}
+                    <div class="list-group-item list-group-item-action flex-column align-items-start">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">{{ book['title'] }}</h5>
+                            <small>listed {{ book['timeHere'] }} days ago</small>
+                        </div>
+                        <div class="row">
+                            <div class="card-body col-4">
+                                <img class="card-img-top img-fluid mx-auto" src="{{ book['coverImageUrl'] }}"
+                                     style="max-width: 75%">
+                            </div>
+                            <div class="col-8">
+                                <ul class="mb-1 mt-3">
+                                    <li>Author: {{ book['author'] }}</li>
+                                    <li>ISBN: {{ book['ISBN'] }}</li>
+                                    <li>Copy Quality: {{ book['copyQuality'] }}</li>
+                                    <li>Points Needed: {{ book['pointsNeeded'] }}</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="d-flex w-100 justify-content-between">
+                            <small>Listing User: {{ book['listingUser'] }}</small>
+                            <div class="d-flex w-100 justify-content-end">
+                                <form>
+                                    <input type="hidden" id="userBooksId" name="userBooksId"
+                                           value="{{ book['userBooksId'] }}">
+                                    <input type="hidden" id="listing_user" name="listing_user"
+                                           value="{{ book['listingUser'] }}">
+                                    <input type="hidden" id="requested_book" name="requested_book"
+                                           value="{{ book['ISBN'] }}">
+                                    <button type="submit" class="btn btn-success btn-sm m-1"
+                                            onclick='requestTrade( {{ book | tojson }}, {{ points_available|int }})'>
+                                        Request Trade
+                                    </button>
+                                </form>
+                                <form>
+                                    <button type="submit" class="btn btn-primary btn-sm m-1"
+                                            formaction="/add-to-wishlist/{{ book['ISBN'] }}">Add to Wishlist
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+                <br>
+            </div>
+            <!-- External results - from open library API, not listed by any user -->
+            <p class="text-center">Here are some matches that no-one has listed yet. Add them to your wishlist, maybe
+                someone will list them!</p>
+            <div class="list-group">
+                {% for book in external_results %}
+                    <div class="list-group-item list-group-item-action flex-column align-items-start">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">{{ book['title'] }}</h5>
+                        </div>
+                        <div class="row">
+                            <div class="card-body col-4">
+                                {% if book.coverImageUrl %}
+                                    <img class="card-img-top img-fluid mx-auto" src="{{ book['coverImageUrl'] }}"
+                                         style="max-width: 75%">
+                                {% else %}
+                                    NO IMAGE AVAILABLE
+                                {% endif %}
+                            </div>
+                            <div class="col-8">
+                                <ul class="mb-1 mt-3">
+                                    <li>Author: {{ book['author'] }}</li>
+                                    <li>ISBN: {{ book['ISBN'] }}</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="d-flex w-100 justify-content-between">
+                            <div class="d-flex w-100 justify-content-end">
+                                <form>
+                                    <input type="hidden" id="requested_book" name="requested_book"
+                                           value="{{ book['ISBN'] }}">
+                                </form>
+                                <form>
+                                    <button type="submit" class="btn btn-primary btn-sm m-1"
+                                            formaction="/add-to-wishlist/{{ book['id'] }}">Add to Wishlist
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+                <br>
+                <form action="{{ url_for('browse_books') }}">
+                    <input type="submit" class="btn btn-info mb-4" value="Back to Browsing Books"/>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="modal" tabindex="-1" role="dialog" id="addToWishlistModal">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Adding Book To Wishlist</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p> Please confirm that you would like to add the following book to your wishlist. </p>
+                    <div class="col-12 mb-4">
+                        <div class="card text-center h-100">
+                            <div class="card-body">
+                                <img class="card-img-top img-fluid mx-auto" id='addToWishlistModalCover'
+                                     style="max-width: 50%">
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title" id='addToWishlistModalTitle'> Sample Book Title</h5>
+                                <p class="card-text text-left">
+                                    <span class="text-info">Author:</span> <strong
+                                        id="addToWishlistModalAuthor"> </strong>
+                                    <br><span class="text-info" id="addToWishlistModalAuthor">ISBN:</span> <strong
+                                        id="addToWishlistModalISBN"> </strong>
+                                    <br><span class="text-info">Quality:</span> <strong
+                                        id="addToWishlistModalCopyQuality"> </strong>
+                                    <br><span class="text-info">Points Needed:</span> <strong
+                                        id="addToWishlistModalPointsNeeded"> </strong>
+                                </p>
+                                <p class="card-text text-center">
+                                    <small>Listing User: <strong id="addToWishlistModalListingUser"> </strong></small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <form id="addToWishlistModalConfirmAddToWishlist">
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-primary">
+                                    Please Add This Book To My Wishlist
+                                </button>
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" tabindex="-1" role="dialog" id="requestTradeModal">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Trade Request Confirmation</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body text-left">
+                    <p> You are about to request
+                        <span class="text-info" id="requestTradeModalTitle"></span>
+                        by <span class='text-info' id="requestTradeModalAuthor"></span>
+                    </p>
+                    <p> You will be requesting this book from user
+                        <span class='text-info' id="requestTradeModalUsername"></span>
+                    </p>
+                    <p> This will cost you
+                        <span class='text-info' id="requestTradeModalPointsNeeded"></span>
+                    </p>
+                    <p> This will leave you with
+                        <span class='text-info' id="requestTradeModalPointsRemaining"></span>
+                    </p>
+                    <div class="col-12 mb-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <img class="card-img-top img-fluid mx-auto"
+                                     id='requestTradeModalCover'
+                                     style="max-width: 50%">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <form id="requestTradeModalConfirmForm">
+                            <div class="form-group">
+                                <button id='requestTradeModalConfirmationButton' type="submit" class="btn btn-primary">
+                                    Please Request This Book
+                                </button>
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal" tabindex="-1" role="dialog" id="requestTradeInsufficientPointsModal">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Insufficient Points For Book Request</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body text-left">
+                    <p><span class="text-info" id="requestTradeInsufficientPointsModalUsername"></span>
+                        wants
+                        <span class='text-info' id="requestTradeInsufficientPointsModalPointsNeeded"></span>
+                        for this copy of
+                        <span class='text-info' id='requestTradeInsufficientPointsModalTitle'></span>.
+                    </p>
+                    <p> Unfortunately, you only have <span class='text-info'
+                                                           id="requestTradeInsufficientPointsAvailable">
+                </span> available to use.
+                    </p>
+                    <p> You can earn more points by <a href="{{ url_for('my_books') }}" class='text-info'>listing
+                        books</a>
+                        for others to request.</p>
+                    <p> Or, <a href="{{ url_for('browse_books') }}" class="text-info">browse other books</a> to find an
+                        alternative.
+                    </p>
+                    <div class="col-12 mb-2">
+                        <div class="card text-center h-100">
+                            <div class="card-body">
+                                <img class="card-img-bottom img-fluid mx-auto"
+                                     id='requestTradeInsufficientPointsModalCover'
+                                     style="max-width: 50%">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <form>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal">
+                            Cancel
+                        </button>
+                    </form>
+                </div>
+                <br/>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" data-keyboard="false" data-backgrop="static" tabindex="-1" role="dialog"
+         id="requestTradeSuccessModal">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Book Request Sent!</h5>
+                </div>
+                <div class="modal-body text-left">
+                    <p>
+                        Your request of
+                        <span class="text-info" id="requestTradeSuccessModalTitle"></span>
+                        from <span class='text-info' id="requestTradeSuccessModalUsername"></span>
+                        has been placed.
+                    </p>
+                    <p> This has cost you
+                        <span class='text-info' id="requestTradeSuccessModalPointsNeeded"></span>, leaving you with
+                        <span class='text-info' id='requestTradeSuccessModalPointsAvailable'></span>.
+                    </p>
+                    <p>If your request is rejected, the points will be returned to your balance. A refund can also be
+                        processed if the book is never received.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <a href="{{ url_for('browse_books') }}" class="btn btn-primary active" role="button"
+                       aria-pressed="true">Back to Browsing Books</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="text/javascript" src="{{ url_for('static', filename='js/browse-books.js') }}">
+    </script>
+{% endblock content %}

@@ -1,0 +1,88 @@
+{% block body %}
+    {% if search_results|length > 0 %}
+        <h3 class="text-center">Search Results</h3>
+        <table class="table table-hover">
+            <thead>
+            <tr class="text-left">
+                <th scope="col">Book Title</th>
+                <th scope="col">Cover Image</th>
+                {% if show_qualities == True %}
+                    <th scope="col">Quality</th>
+                {% endif %}
+                {% if show_points == True %}
+                    <th scope="col">Points</th>
+                {% endif %}
+                <th scope="col">Add Book</th>
+            </tr>
+            </thead>
+            {% for result in search_results %}
+                <tr class="search_result" id="{{ "bookId" ~ result.id }}">
+                    <td><h5>{{ result.title }}</h5> <br>
+                        by {{ result.author }}</td>
+                    <td>
+                        {% if result.coverImageUrl %}
+                            {% if show_wishlist_results %}
+                                <img src="{{ result.coverImageUrl }}" alt="Book Cover Image" class="img-thumbnail"
+                                     style="max-width: 50%; max-height: 50%">
+                            {% else %}
+                                <img src="{{ result.coverImageUrl }}" alt="Book Cover Image" class="img-thumbnail"
+                                     style="max-width: 75%; max-height: 75%">
+                            {% endif %}
+                        {% else %}
+                            NO IMAGE AVAILABLE
+                        {% endif %}
+                    </td>
+                    {% if show_qualities == True %}
+                        <td>
+                            <div class="form-group">
+                                <label class="pl-2">Quality of your copy?</label>
+                                <select class="form-control custom-select custom-select-sm new-book-quality"
+                                        id="{{ "copyQualityBookId" ~ result.id }}">
+                                    {% for cq in copyqualities %}
+                                        <option value="{{ cq[0] }}">{{ cq[1] }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </td>
+                    {% endif %}
+                    {% if show_points==True %}
+                        <td>
+                            <div class="form-group">
+                                <label for="{{ "pointsBookId" ~ result.id }}" class="pl-2">Point Value? (Maximum is 10
+                                    points)</label>
+                                <input class="form-control form-control-sm" id="{{ "pointsBookId" ~ result.id }}"
+                                       type="number" placeholder="1" min="0" max="10" value="1"
+                                       onkeyup="if(parseInt(this.value)>10){ this.value =10; return false; }">
+                            </div>
+                        </td>
+                    {% endif %}
+                    <td>
+                        <button type="button" class="btn btn-primary btn-sm ml-2 mb-1 add-book-button"
+                                id="{{ "addBtnBookId" ~ result.id }}" data-bookid="{{ result.id }}">
+                            Add Book {% if show_wishlist_results %} to Wishlist {% endif %}
+                        </button>
+                        <br>
+                        <button type="button" class="btn btn-primary btn-sm ml-2 mb-1 confirm-book-button"
+                                id="{{ "confirmBtnBookId" ~ result.id }}" data-bookid="{{ result.id }}">Confirm
+                        </button>
+                        <br>
+                        <button type="button"
+                                class="btn btn-danger btn-sm ml-2 cancel-book-button"
+                                id="{{ "cancelBtnBookId" ~ result.id }}"
+                                data-bookid="{{ result.id }}">Cancel
+                        </button>
+
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <div class="w-100 p-3 mx-auto">
+            <h3 class="p1-2 text-center">Sorry, no matches found!</h3>
+            {% if show_wishlist_results %}
+                <!-- Adds extra spacing at bottom of page to avoid the floating footer -->
+                <div class="mb-5 container"><br><br><br></div>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}
